@@ -26,7 +26,7 @@ class MessageSender {
     }
 
     static List obtainMessages(files) {
-        String pattern = 'Sending message'
+        //String pattern = 'Sending message'
         List messages = []
         File file
         int messagesNumber = 0
@@ -35,12 +35,12 @@ class MessageSender {
                 log.info("opening file $i, name: $fileName")
                 file = new File(fileName)
                 file.eachLine { line ->
-                    if (line.contains(pattern)) {
-                        String message = line.split("\\{")[1].split("}")[0]
-                        log.info("{$message}")
-                        messages.add("{$message}")
+                    //if (line.contains(pattern)) {
+                        String message = line //line.split("\\{")[1].split("}")[0]
+                        log.info("$message")
+                        messages.add("$message")
                         messagesNumber++
-                    }
+                    //}
                 }
             }
             catch (Exception e) {

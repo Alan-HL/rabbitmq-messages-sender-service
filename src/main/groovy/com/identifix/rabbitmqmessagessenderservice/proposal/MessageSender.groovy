@@ -1,7 +1,5 @@
 package com.identifix.rabbitmqmessagessenderservice.proposal
 
-import groovy.json.JsonGenerator
-import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
@@ -26,7 +24,7 @@ class MessageSender {
     }
 
     static List obtainMessages(files) {
-        String pattern = 'Sending message'
+        String pattern = 'Sending message {'
         List messages = []
         File file
         int messagesNumber = 0

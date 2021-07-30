@@ -23,6 +23,16 @@ class MessageSender {
         }
     }
 
+    void processQueue( String queueName, filePath ) {
+        try {
+            readAndSaveMessages(queueName, filePath)
+
+        }
+        catch (Exception e) {
+            log.error("error: $e")
+        }
+    }
+
     static List obtainMessages(files) {
         String pattern = 'Sending message {'
         List messages = []
@@ -57,6 +67,30 @@ class MessageSender {
         }
         catch (Exception e) {
             log.error("error: $e")
+        }
+    }
+
+    void readAndSaveMessages(String queueName, String filePath)
+    {
+        log.info("creating file: $filePath")
+        File file = new File(filePath)
+        validateFile(file)
+        FileWriter writeFile = new FileWriter(file, true)
+        log.info("reading messages")
+        String message = rabbitTemplate.receiveAndConvert(queueName)
+        while (message) {
+            println(message)
+            writeFile.write("$message \n")
+            message = rabbitTemplate.receiveAndConvert(queueName)
+        }
+        writeFile.close()
+        log.info("endend messages")
+    }
+
+    private static void validateFile(File file) {
+        if (file.exists()) {
+            file.delete()
+            file.createNewFile()
         }
     }
 }

@@ -25,7 +25,7 @@ class MessageSender {
     }
 
     static List<String> obtainMessages(String files) {
-        //String pattern = 'Sending message'
+        //String pattern = 'Sending message {"'
         List<String> messages = []
         File file
         int messagesNumber = 0
@@ -50,10 +50,10 @@ class MessageSender {
         return messages
     }
 
-    void sendMessages(List messages, String exchangeName) {
+    void sendMessages(List<String> messages, String exchangeName) {
         try {
             messages.forEach { message ->
-                rabbitTemplate.convertAndSend(exchangeName, "", message.toString())
+                rabbitTemplate.convertAndSend(exchangeName, "", message)
             }
         }
         catch (Exception e) {

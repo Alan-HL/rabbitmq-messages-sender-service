@@ -5,7 +5,9 @@ import com.identifix.kraken.client.bean.Credential
 import com.identifix.kraken.client.bean.Manual
 import com.identifix.kraken.client.bean.ManualPage
 import com.identifix.rabbitmqmessagessenderservice.configuration.UtilityServiceConfig
+import com.identifix.rabbitmqmessagessenderservice.proposal.MessageSender
 import com.identifix.rabbitmqmessagessenderservice.utils.CommonConstants
+import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.json.JSONArray
 import org.jsoup.Jsoup
@@ -15,13 +17,15 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Component
 
 import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 
 @Component
 @Slf4j
 class UtilityService {
+    @Autowired
+    MessageSender messageSender
+
     @Autowired
     UtilityServiceConfig utilityServiceConfig
 
@@ -34,7 +38,7 @@ class UtilityService {
         new KrakenClient(krakenServiceUrl:utilityServiceConfig.krakenUri, credential:credential)
     } ()
 
-    String validateManualPagesDate(String manualUid, String limitDate) {
+    String validateManualPagesDate(String manualUid, String limitDate, String exchangeName) {
         Manual manual = krakenClient.getManualById(manualUid)
         byte[] content = krakenClient.getManualBytes(manual)
 
@@ -42,16 +46,21 @@ class UtilityService {
         List<ManualPage> manualPages = getManualPages(parsedManual)
 
         ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
+        int outdatedPages = 0
+        String response = ""
 
         manualPages.each {
-            if (it.freshness.isBefore(limit)){
-                log.info("MetaLinkId :${it.publisherDocumentId}")
-                log.info("with freshness ${it.freshness}")
+            if (it.freshness.isBefore(limit)) {
+                response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
+                log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
+                outdatedPages++
             }
         }
 
+        response += "${outdatedPages} outdated pages"
 
-        "TEST" + manualUid + limitDate
+        obtainAndSendRabbitMessages(response, exchangeName)
+        response
     }
 
     static JSONArray toJSONArray(byte[] content) {
@@ -104,5 +113,34 @@ class UtilityService {
         }
 
         pages
+    }
+
+    void obtainAndSendRabbitMessages( String pages, String exchangeName) {
+        Map<String,String> allMessages = loadAllMessagesToMap()
+        List<String> messagesToBeSent = []
+
+        pages.eachLine {
+            if (it.contains('MetaLinkId: ')) {
+                String metaLinkId = it.split(" ")[1]
+                messagesToBeSent.add(allMessages.get(metaLinkId))
+            }
+        }
+        log.info(messagesToBeSent.size() as String)
+
+        messageSender.sendMessages(messagesToBeSent, exchangeName)
+    }
+
+    Map<String,String> loadAllMessagesToMap() {
+        File inputFile = new File("Rabbit-Messages.txt")
+        JsonSlurper jsonSlurper = new JsonSlurper()
+        Map<String,String> pagesMap = [:]
+        inputFile.eachLine {line ->
+            Object object = jsonSlurper.parseText(line)
+//        println object.metaLinkId
+            pagesMap.put(object.metaLinkId, line)
+        }
+        println("Total Rabbit Messages: ${pagesMap.size()}")
+
+        pagesMap
     }
 }

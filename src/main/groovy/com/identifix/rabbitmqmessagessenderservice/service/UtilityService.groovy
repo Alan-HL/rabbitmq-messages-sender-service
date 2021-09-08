@@ -100,8 +100,6 @@ class UtilityService {
                     continue
                 }
                 pages.add(page)
-                if (pages.size() == 100)
-                    break
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
                 missingDocumentsNumber++
@@ -129,7 +127,7 @@ class UtilityService {
         }
         log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
 
-        messageSender.sendMessages(messagesToBeSent, exchangeName)
+        //messageSender.sendMessages(messagesToBeSent, exchangeName)
     }
 
     Map<String,String> loadAllMessagesToMap(String fileName) {

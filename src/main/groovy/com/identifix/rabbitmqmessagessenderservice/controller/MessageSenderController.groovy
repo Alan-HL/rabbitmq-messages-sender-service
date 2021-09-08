@@ -34,4 +34,10 @@ class MessageSenderController {
         String response = messageSender.processQueue(queueName, filePath)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
+
+    @PostMapping("/readerAndSender")
+    ResponseEntity<String> readAndSendMessages(@RequestParam String exchange, @RequestBody String filePath) {
+        String response = messageSender.processFiles(exchange, filePath)
+        new ResponseEntity(response, HttpStatus.ACCEPTED)
+    }
 }

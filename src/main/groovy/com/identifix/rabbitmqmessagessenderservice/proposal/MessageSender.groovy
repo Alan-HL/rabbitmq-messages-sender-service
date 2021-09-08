@@ -23,6 +23,40 @@ class MessageSender {
         }
     }
 
+    void processFiles( String exchangeName, String files) {
+        try {
+            String pattern = 'image='
+            List messages = []
+            File file
+            files.split("\r\n").eachWithIndex { fileName, i ->
+                try {
+                    log.info("opening file $i, name: $fileName")
+                    if(i == 0){
+                        file = new File(fileName)
+                        file.eachLine { line ->
+                            if (line.contains(pattern)) {
+                                String message = line.split("image=")[1].split(" >")[0]
+                                log.info(message)
+                                messages.add(message)
+                            }
+                        }
+                    }
+                    else {
+                        List finalMessages = obtainMatchMessages(fileName, messages)
+                        println("total messages:${messages.size()}")
+                        sendMessages(finalMessages,exchangeName)
+                    }
+                }
+                catch (Exception e) {
+                    log.error("error: $e")
+                }
+            }
+        }
+        catch (Exception e) {
+            log.error("error: $e")
+        }
+    }
+
     void processQueue( String queueName, filePath ) {
         try {
             readAndSaveMessages(queueName, filePath)
@@ -31,6 +65,36 @@ class MessageSender {
         catch (Exception e) {
             log.error("error: $e")
         }
+    }
+
+    static List obtainMatchMessages(files, messageList) {
+        String pattern = 'Sending message {'
+        List messages = []
+        File file
+        int messagesNumber = 0
+        files.split("\r\n").eachWithIndex { fileName, i ->
+            try {
+                log.info("opening file $i to match messages, name: $fileName")
+                file = new File(fileName)
+                file.eachLine { line ->
+                    if (line.contains(pattern)) {
+                        String metaLink = line.split("metaLinkId\":\"")[1].split("\"")[0]
+                        if(messageList.contains(metaLink)){
+                            log.info("metalink: " + metaLink)
+                            String message = line.split("\\{")[1].split("}")[0]
+                            log.info("{$message}")
+                            messages.add("{$message}")
+                            messagesNumber++
+                        }
+                    }
+                }
+            }
+            catch (Exception e) {
+                log.error("error: $e")
+            }
+        }
+        log.info("Messages found: $messagesNumber\n")
+        return messages
     }
 
     static List obtainMessages(files) {

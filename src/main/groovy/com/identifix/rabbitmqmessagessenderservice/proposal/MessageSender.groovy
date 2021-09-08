@@ -1,7 +1,5 @@
 package com.identifix.rabbitmqmessagessenderservice.proposal
 
-import groovy.json.JsonGenerator
-import groovy.json.JsonSlurper
 import groovy.util.logging.Slf4j
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,13 +10,13 @@ import org.springframework.stereotype.Component
 class MessageSender {
 
     @Autowired
-    RabbitTemplate rabbitTemplate;
+    RabbitTemplate rabbitTemplate
 
     String processFile( String exchangeName, String files) {
         try {
-            List messages = obtainMessages(files)
-            println("total messages:${messages.size()}")
-            sendMessages(messages,exchangeName)
+            List<String> messages = obtainMessages(files)
+            log.info("total messages:${messages.size()}")
+            sendMessages(messages, exchangeName)
             "${messages.size()} messages found and sent"
         }
         catch (Exception e) {
@@ -26,9 +24,9 @@ class MessageSender {
         }
     }
 
-    static List obtainMessages(files) {
+    static List<String> obtainMessages(String files) {
         //String pattern = 'Sending message'
-        List messages = []
+        List<String> messages = []
         File file
         int messagesNumber = 0
         files.split("\r\n").eachWithIndex { fileName, i ->
@@ -55,7 +53,7 @@ class MessageSender {
     void sendMessages(List messages, String exchangeName) {
         try {
             messages.forEach { message ->
-                rabbitTemplate.convertAndSend(exchangeName, "", message.toString());
+                rabbitTemplate.convertAndSend(exchangeName, "", message.toString())
             }
         }
         catch (Exception e) {

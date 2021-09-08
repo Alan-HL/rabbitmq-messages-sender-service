@@ -7,6 +7,6 @@ import org.springframework.stereotype.Component
 @Slf4j
 class UtilityService {
     String validateManualPagesDate(String manualUid, String limitDate) {
-        "TEST"
+        "TEST" + manualUid + limitDate
     }
 }

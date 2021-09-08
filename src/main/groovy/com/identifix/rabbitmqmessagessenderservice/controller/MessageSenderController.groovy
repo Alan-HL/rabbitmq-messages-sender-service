@@ -28,13 +28,13 @@ class MessageSenderController {
 
     @PostMapping("/sender")
     ResponseEntity<String> sendMessages(@RequestParam String exchange, @RequestBody String files) {
-        String response = messageSender.processFile(exchange,files)
+        String response = messageSender.processFile(exchange, files)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
 
     @GetMapping("/dateValidation/pages")
     ResponseEntity<String> validatePagesDate(@RequestParam String manualUid, @RequestParam String limitDate) {
-        String response = utilityService.validateManualPagesDate(manualUid,limitDate)
+        String response = utilityService.validateManualPagesDate(manualUid, limitDate)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
 }

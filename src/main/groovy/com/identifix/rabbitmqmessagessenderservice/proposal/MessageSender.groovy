@@ -14,11 +14,12 @@ class MessageSender {
     @Autowired
     RabbitTemplate rabbitTemplate;
 
-    void processFile( String exchangeName, String files) {
+    String processFile( String exchangeName, String files) {
         try {
             List messages = obtainMessages(files)
             println("total messages:${messages.size()}")
             sendMessages(messages,exchangeName)
+            "${messages.size()} messages found and sent"
         }
         catch (Exception e) {
             log.error("error: $e")

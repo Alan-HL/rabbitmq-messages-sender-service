@@ -38,17 +38,17 @@ class UtilityService {
         new KrakenClient(krakenServiceUrl:utilityServiceConfig.krakenUri, credential:credential)
     } ()
 
-    String validateManualPagesDate(String manualUid, String limitDate, String exchangeName) {
+    String validateManualPagesDate(String manualUid, String limitDate, String exchangeName, String fileName) {
         Manual manual = krakenClient.getManualById(manualUid)
         byte[] content = krakenClient.getManualBytes(manual)
-
+        log.info("Manual obtained from Nuxeo")
         JSONArray parsedManual = toJSONArray(content)
         List<ManualPage> manualPages = getManualPages(parsedManual)
 
         ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
         int outdatedPages = 0
         String response = ""
-
+        log.info("OUTDATED pages:")
         manualPages.each {
             if (it.freshness.isBefore(limit)) {
                 response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
@@ -59,7 +59,7 @@ class UtilityService {
 
         response += "${outdatedPages} outdated pages"
 
-        obtainAndSendRabbitMessages(response, exchangeName)
+        obtainAndSendRabbitMessages(response, exchangeName, fileName)
         response
     }
 
@@ -100,6 +100,8 @@ class UtilityService {
                     continue
                 }
                 pages.add(page)
+                if (pages.size() == 100)
+                    break
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
                 missingDocumentsNumber++
@@ -115,8 +117,8 @@ class UtilityService {
         pages
     }
 
-    void obtainAndSendRabbitMessages( String pages, String exchangeName) {
-        Map<String,String> allMessages = loadAllMessagesToMap()
+    void obtainAndSendRabbitMessages( String pages, String exchangeName, String fileName) {
+        Map<String,String> allMessages = loadAllMessagesToMap(fileName)
         List<String> messagesToBeSent = []
 
         pages.eachLine {
@@ -125,21 +127,25 @@ class UtilityService {
                 messagesToBeSent.add(allMessages.get(metaLinkId))
             }
         }
-        log.info(messagesToBeSent.size() as String)
+        log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
 
         messageSender.sendMessages(messagesToBeSent, exchangeName)
     }
 
-    Map<String,String> loadAllMessagesToMap() {
-        File inputFile = new File("Rabbit-Messages.txt")
+    Map<String,String> loadAllMessagesToMap(String fileName) {
+        def sendPattern = 'Sending message {"'
+        File inputFile = new File(fileName)
         JsonSlurper jsonSlurper = new JsonSlurper()
         Map<String,String> pagesMap = [:]
+
         inputFile.eachLine {line ->
-            Object object = jsonSlurper.parseText(line)
-//        println object.metaLinkId
-            pagesMap.put(object.metaLinkId, line)
+            if (line.contains(sendPattern)) {
+                String messageLine = line.split("\\{")[1].split("}")[0]
+                Object object = jsonSlurper.parseText("{${messageLine}}")
+                pagesMap.put(object.metaLinkId, messageLine)
+            }
         }
-        println("Total Rabbit Messages: ${pagesMap.size()}")
+        log.info("Total Rabbit Messages obtained from Logs: ${pagesMap.size()}")
 
         pagesMap
     }

@@ -33,8 +33,9 @@ class MessageSenderController {
     }
 
     @GetMapping("/dateValidation/pages")
-    ResponseEntity<String> validatePagesDate(@RequestParam String manualUid, @RequestParam String limitDate, @RequestParam String exchangeName) {
-        String response = utilityService.validateManualPagesDate(manualUid, limitDate, exchangeName)
+    ResponseEntity<String> validatePagesDate(@RequestParam String manualUid, @RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFile) {
+        log.info("Received request!")
+        String response = utilityService.validateManualPagesDate(manualUid, limitDate, exchangeName, inputFile)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
 }

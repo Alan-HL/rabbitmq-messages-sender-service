@@ -127,7 +127,7 @@ class UtilityService {
         }
         log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
 
-        //messageSender.sendMessages(messagesToBeSent, exchangeName)
+        messageSender.sendMessages(messagesToBeSent, exchangeName)
     }
 
     Map<String,String> loadAllMessagesToMap(String fileName) {

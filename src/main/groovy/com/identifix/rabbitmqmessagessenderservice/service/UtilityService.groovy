@@ -100,8 +100,6 @@ class UtilityService {
                     continue
                 }
                 pages.add(page)
-                if (pages.size() == 100)
-                    break
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
                 missingDocumentsNumber++
@@ -142,7 +140,7 @@ class UtilityService {
             if (line.contains(sendPattern)) {
                 String messageLine = line.split("\\{")[1].split("}")[0]
                 Object object = jsonSlurper.parseText("{${messageLine}}")
-                pagesMap.put(object.metaLinkId, "{${messageLine}}")
+                pagesMap.put(object.metaLinkId, "{"+messageLine+"}")
             }
         }
         log.info("Total Rabbit Messages obtained from Logs: ${pagesMap.size()}")

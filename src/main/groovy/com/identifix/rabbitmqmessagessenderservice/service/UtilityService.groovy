@@ -64,7 +64,7 @@ class UtilityService {
     }
 
     String revalidateManualPagesDate(String limitDate, String exchangeName, String files) {
-        String pattern = 'MetaLinkId :'
+        String pattern = "MetaLinkId: "
         File file
         String response = ""
         List<String> metaLinks = []
@@ -75,7 +75,7 @@ class UtilityService {
                     file = new File(fileName)
                     file.eachLine { line ->
                         if (line.contains(pattern)) {
-                            String message = line.split("MetaLinkId :")[1].split(" with")[0]
+                            String message = line.split("MetaLinkId: ")[1].split(" with")[0]
                             log.info(message)
                             metaLinks.add(message)
                         }

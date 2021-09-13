@@ -63,6 +63,50 @@ class UtilityService {
         response
     }
 
+    String revalidateManualPagesDate(String manualUid, String limitDate, String exchangeName, String files) {
+        String pattern = 'MetaLinkId :'
+        File file
+        List metaLinks = []
+        files.split("\r\n").eachWithIndex { fileName, i ->
+            try {
+                log.info("opening file $i, name: $fileName")
+                if(i == 0){
+                    file = new File(fileName)
+                    file.eachLine { line ->
+                        if (line.contains(pattern)) {
+                            String message = line.split("MetaLinkId :")[1].split(" with")[0]
+                            log.info(message)
+                            metaLinks.add(message)
+                        }
+                    }
+                }
+                else {
+                    List<ManualPage> manualPages = getManualPages(metaLinks)
+                    ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
+                    int outdatedPages = 0
+                    String response = ""
+                    log.info("OUTDATED pages:")
+                    manualPages.each {
+                        if (it.freshness.isBefore(limit)) {
+                            response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
+                            log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
+                            outdatedPages++
+                        }
+                    }
+
+                    response += "${outdatedPages} outdated pages"
+
+                    obtainAndSendRabbitMessages(response, exchangeName, fileName)
+                    response
+                }
+            }
+            catch (Exception e) {
+                log.error("error: $e")
+            }
+        }
+
+    }
+
     static JSONArray toJSONArray(byte[] content) {
         Document document = Jsoup.parse(new String(content), CommonConstants.UTF_8, Parser.xmlParser())
         JSONArray array = new JSONArray()

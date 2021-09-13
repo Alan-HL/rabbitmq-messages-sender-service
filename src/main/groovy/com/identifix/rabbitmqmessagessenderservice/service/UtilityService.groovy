@@ -63,10 +63,11 @@ class UtilityService {
         response
     }
 
-    String revalidateManualPagesDate(String manualUid, String limitDate, String exchangeName, String files) {
+    String revalidateManualPagesDate(String limitDate, String exchangeName, String files) {
         String pattern = 'MetaLinkId :'
         File file
-        List metaLinks = []
+        String response = ""
+        List<String> metaLinks = []
         files.split("\r\n").eachWithIndex { fileName, i ->
             try {
                 log.info("opening file $i, name: $fileName")
@@ -84,7 +85,6 @@ class UtilityService {
                     List<ManualPage> manualPages = getManualPages(metaLinks)
                     ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
                     int outdatedPages = 0
-                    String response = ""
                     log.info("OUTDATED pages:")
                     manualPages.each {
                         if (it.freshness.isBefore(limit)) {
@@ -97,13 +97,13 @@ class UtilityService {
                     response += "${outdatedPages} outdated pages"
 
                     obtainAndSendRabbitMessages(response, exchangeName, fileName)
-                    response
                 }
             }
             catch (Exception e) {
                 log.error("error: $e")
             }
         }
+        response
 
     }
 
@@ -137,6 +137,37 @@ class UtilityService {
         for (int i = 0; i < parsedManual.length(); i++) {
             try {
                 publisherDocumentId = (parsedManual.get(i) as JSONArray).get(0)
+                ManualPage page = krakenClient.getManualPageByPublisherDocumentId(publisherDocumentId)
+
+                if (!page) {
+                    log.error "Error - Found null value for page."
+                    continue
+                }
+                pages.add(page)
+                log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
+            } catch (Exception e) {
+                missingDocumentsNumber++
+                missingDocuments.add(publisherDocumentId)
+                log.error("Error when retrieving manual page from Nuxeo: ${publisherDocumentId}: ${e.message}")
+            }
+        }
+        log.info("Number of missing pages: ${missingDocumentsNumber}")
+        missingDocuments.each {
+            log.info("MetaLinkId : ${it}")
+        }
+
+        pages
+    }
+
+    List<ManualPage> getManualPages(List<String> metaLinks) {
+        int missingDocumentsNumber = 0
+        List<String> missingDocuments = []
+        String publisherDocumentId
+        List<ManualPage> pages = []
+
+        for (int i = 0; i < metaLinks.size(); i++) {
+            try {
+                publisherDocumentId = metaLinks.get(i)
                 ManualPage page = krakenClient.getManualPageByPublisherDocumentId(publisherDocumentId)
 
                 if (!page) {

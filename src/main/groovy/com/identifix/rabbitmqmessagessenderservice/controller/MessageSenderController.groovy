@@ -40,9 +40,9 @@ class MessageSenderController {
     }
 
     @GetMapping("/dateRevalidation/pages")
-    ResponseEntity<String> revalidatePagesDate(@RequestParam String manualUid, @RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFiles) {
+    ResponseEntity<String> revalidatePagesDate(@RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFiles) {
         log.info("Received request!")
-        String response = utilityService.revalidateManualPagesDate(manualUid, limitDate, exchangeName, inputFiles)
+        String response = utilityService.revalidateManualPagesDate(limitDate, exchangeName, inputFiles)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
 }

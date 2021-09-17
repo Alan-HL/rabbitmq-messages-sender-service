@@ -36,8 +36,8 @@ class MessageSender {
                 file.eachLine { line ->
                     //if (line.contains(pattern)) {
                         String message = line //line.split("\\{")[1].split("}")[0]
-                        log.info("$message")
-                        messages.add("$message")
+                        log.info(message)
+                        messages.add(message)
                         messagesNumber++
                     //}
                 }

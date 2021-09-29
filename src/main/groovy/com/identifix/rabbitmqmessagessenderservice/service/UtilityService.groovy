@@ -117,9 +117,8 @@ class UtilityService {
                 if(i == 0){
                     file = new File(fileName)
                     file.eachLine { line ->
-                        String message = line.split("\\.html")[0]
-                        log.info(message)
-                        metaLinks.add(message)
+                        log.info(line)
+                        metaLinks.add(line)
                     }
                 }
                 else {

@@ -45,4 +45,11 @@ class MessageSenderController {
         String response = utilityService.revalidateManualPagesDate(limitDate, exchangeName, inputFiles)
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
+
+    @GetMapping("/dateRevalidation2/pages")
+    ResponseEntity<String> revalidatePagesDate2(@RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFiles) {
+        log.info("Received request!")
+        String response = utilityService.revalidateManualPagesDate2(limitDate, exchangeName, inputFiles)
+        new ResponseEntity(response, HttpStatus.ACCEPTED)
+    }
 }

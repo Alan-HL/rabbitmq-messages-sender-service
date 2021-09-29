@@ -107,6 +107,50 @@ class UtilityService {
 
     }
 
+    String revalidateManualPagesDate2(String limitDate, String exchangeName, String files) {
+        String pattern = "html"
+        File file
+        String response = ""
+        List<String> metaLinks = []
+        files.split("\r\n").eachWithIndex { fileName, i ->
+            try {
+                log.info("opening file $i, name: $fileName")
+                if(i == 0){
+                    file = new File(fileName)
+                    file.eachLine { line ->
+                        if (line.contains(pattern)) {
+                            String message = line.split("html")[0]
+                            log.info(message)
+                            metaLinks.add(message)
+                        }
+                    }
+                }
+                else {
+                    List<ManualPage> manualPages = getManualPages(metaLinks)
+                    ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
+                    int outdatedPages = 0
+                    log.info("OUTDATED pages:")
+                    manualPages.each {
+                        if (it.freshness.isBefore(limit)) {
+                            response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
+                            log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
+                            outdatedPages++
+                        }
+                    }
+
+                    response += "${outdatedPages} outdated pages"
+
+                    obtainAndSendRabbitMessages(response, exchangeName, fileName)
+                }
+            }
+            catch (Exception e) {
+                log.error("error: $e")
+            }
+        }
+        response
+
+    }
+
     static JSONArray toJSONArray(byte[] content) {
         Document document = Jsoup.parse(new String(content), CommonConstants.UTF_8, Parser.xmlParser())
         JSONArray array = new JSONArray()

@@ -136,7 +136,7 @@ class UtilityService {
 
                     response += "${outdatedPages} outdated pages"
 
-                    obtainAndSendRabbitMessages(response, exchangeName, fileName)
+                    obtainAndSendRabbitMessages2(response, exchangeName, fileName)
                 }
             }
             catch (Exception e) {
@@ -239,6 +239,18 @@ class UtilityService {
                 String metaLinkId = it.split(" ")[1]
                 messagesToBeSent.add(allMessages.get(metaLinkId))
             }
+        }
+        log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
+
+        messageSender.sendMessages(messagesToBeSent, exchangeName)
+    }
+
+    void obtainAndSendRabbitMessages2( String pages, String exchangeName, String fileName) {
+        Map<String,String> allMessages = loadAllMessagesToMap(fileName)
+        List<String> messagesToBeSent = []
+
+        pages.eachLine {
+            messagesToBeSent.add(allMessages.get(it))
         }
         log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
 

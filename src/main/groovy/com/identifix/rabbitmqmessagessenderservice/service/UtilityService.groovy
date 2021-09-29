@@ -134,8 +134,6 @@ class UtilityService {
                         }
                     }
 
-                    response += "${outdatedPages} outdated pages"
-
                     obtainAndSendRabbitMessages2(response, exchangeName, fileName)
                 }
             }

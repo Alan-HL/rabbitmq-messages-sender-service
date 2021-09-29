@@ -119,7 +119,7 @@ class UtilityService {
                     file = new File(fileName)
                     file.eachLine { line ->
                         if (line.contains(pattern)) {
-                            String message = line.split("html")[0]
+                            String message = line.split("\\.html")[0]
                             log.info(message)
                             metaLinks.add(message)
                         }

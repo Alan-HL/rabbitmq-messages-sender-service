@@ -7,12 +7,15 @@ static def setup(){
     dir
 }
 
-static def parseFiles( inputFile) {
+static def searchInsideFile( inputFile) {
+    int count = 0
     print("-")
     inputFile.eachLine {
         if (it.contains('Refer to 00')){    //What you want to search inside the html files
-            println(inputFile.name)
+            println("\n${inputFile.name}")
         }
+        if (count % 1000 == 0)
+            print("\n${count} opened files\n")
     }
     print("/")
 }
@@ -20,6 +23,6 @@ static def parseFiles( inputFile) {
 //Start
 def dir = setup( )
 
-dir.eachFileRecurse (FileType.FILES) { inputFile ->
-    parseFiles(inputFile)
+dir.eachFileRecurse(FileType.FILES) { inputFile ->
+    searchInsideFile(inputFile)
 }

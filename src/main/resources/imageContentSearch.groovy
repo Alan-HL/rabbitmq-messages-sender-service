@@ -11,7 +11,7 @@ static def parseFiles( inputFile) {
     int i = 0
     inputFile.eachLine {
         if (it.contains('img') && !it.contains("width") && i==0){
-            println(inputFile.name)
+            println(inputFile.name.split("\\.html")[0])
             i++
         }
     }

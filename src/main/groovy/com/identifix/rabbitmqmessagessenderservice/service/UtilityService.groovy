@@ -108,7 +108,6 @@ class UtilityService {
     }
 
     String revalidateManualPagesDate2(String limitDate, String exchangeName, String files) {
-        String pattern = "html"
         File file
         String response = ""
         List<String> metaLinks = []
@@ -118,11 +117,9 @@ class UtilityService {
                 if(i == 0){
                     file = new File(fileName)
                     file.eachLine { line ->
-                        if (line.contains(pattern)) {
-                            String message = line.split("\\.html")[0]
-                            log.info(message)
-                            metaLinks.add(message)
-                        }
+                        String message = line.split("\\.html")[0]
+                        log.info(message)
+                        metaLinks.add(message)
                     }
                 }
                 else {
@@ -132,7 +129,7 @@ class UtilityService {
                     log.info("OUTDATED pages:")
                     manualPages.each {
                         if (it.freshness.isBefore(limit)) {
-                            response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
+                            response += "${it.publisherDocumentId}\n"
                             log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
                             outdatedPages++
                         }

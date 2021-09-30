@@ -13,10 +13,13 @@ static def setup(){
 static def parseFiles( inputFile) {
     Document doc = Jsoup.parse(inputFile, "UTF-8")
     Elements imgTags = doc.select("img")
-
+    int i = 0
     imgTags.each {
-        if (!it.hasAttr("width"))
+        if (!it.hasAttr("width") && i ==0){
             println(inputFile.name.split("\\.html")[0])
+            i++
+        }
+
     }
 }
 

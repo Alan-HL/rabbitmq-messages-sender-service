@@ -83,8 +83,11 @@ class FilesProcessor {
 
     void getPaths(Document document){
         String system
+        String subsystemIndex
         String subsystem
+        String componentIndex
         String component
+        String infotypeIndex
         String infotype
         String servinfo
         String tocPath
@@ -105,6 +108,12 @@ class FilesProcessor {
                 else{
                     salesSystem = ""
                 }
+                subsystemIndex = "0000"
+                componentIndex = "00000"
+                subsystem = ""
+                component = ""
+                salesSubsystem = ""
+                salesComponent = ""
             }
             if(item.tagName() =="systemname"){
                 system = item.getElementsByTag("systemname").text().replace(",","")
@@ -112,10 +121,10 @@ class FilesProcessor {
 
             if(item.tagName() =="subsystem"){
                 if(item.hasAttr("catnbr")){
-                    subsystem = item.attr("catnbr")
+                    subsystemIndex = item.attr("catnbr")
                 }
                 else{
-                    subsystem = "0000"
+                    subsystemIndex = "0000"
                 }
                 if(item.hasAttr("salescode")){
                     salesSubsystem = item.attr("salescode")
@@ -123,20 +132,22 @@ class FilesProcessor {
                 else{
                     salesSubsystem = ""
                 }
-
+                componentIndex = "00000"
+                component = ""
+                salesComponent = ""
             }
 
             if(item.tagName() =="subsystemname"){
-                subsystem = "$subsystem ${item.getElementsByTag("subsystemname").text().replace(",","")}"
+                subsystem = "$subsystemIndex ${item.getElementsByTag("subsystemname").text().replace(",","")}"
             }
 
 
             if(item.tagName() == "component"){
                 if(item.hasAttr("compid")){
-                    component = item.attr("compid")
+                    componentIndex = item.attr("compid")
                 }
                 else{
-                    component = "00000"
+                    componentIndex = "00000"
                 }
                 if(item.hasAttr("salescode")){
                     salesComponent = item.attr("salescode")
@@ -146,20 +157,20 @@ class FilesProcessor {
                 }
             }
             if(item.getElementsByTag("componentname")){
-                component = "$component ${item.getElementsByTag("componentname").text().replace(",","")}"
+                component = "$componentIndex ${item.getElementsByTag("componentname").text().replace(",","")}"
             }
 
 
             if(item.getElementsByTag("infotype")){
                 if(item.hasAttr("infotypevalue")){
-                    infotype = item.attr("infotypevalue")
+                    infotypeIndex = item.attr("infotypevalue")
                 }
                 else{
-                    infotype = ""
+                    infotypeIndex = ""
                 }
             }
             if(item.getElementsByTag("infotypename")){
-                infotype = "$infotype ${item.getElementsByTag("infotypename").text().replace(",","")}"
+                infotype = "$infotypeIndex ${item.getElementsByTag("infotypename").text().replace(",","")}"
             }
 
 

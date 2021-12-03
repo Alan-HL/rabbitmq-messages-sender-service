@@ -94,7 +94,10 @@ class FilesProcessor {
         String salesSubsystem
         String tocPaths
         tocPaths = ""
+
         document.getAllElements().eachWithIndex{ Element item, int j ->
+
+
             if(item.tagName() =="system"){
                 if(item.hasAttr("salescode")){
                     salesSystem = item.attr("salescode")
@@ -120,7 +123,9 @@ class FilesProcessor {
                 else{
                     salesSubsystem = ""
                 }
+
             }
+
             if(item.tagName() =="subsystemname"){
                 subsystem = "$subsystem ${item.getElementsByTag("subsystemname").text().replace(",","")}"
             }
@@ -163,10 +168,18 @@ class FilesProcessor {
             }
 
             if(item.tagName() == "ptxt"){
+                if(subsystem==null){
+                    subsystem = "0000"
+                }
+                if( component == null){
+                    component = "00000"
+                }
                 salescode = obtainSalescode(salesSystem, salesSubsystem, salesComponent)
+
                 tocPath = (salescode == "" ) ?
                         "$system, $subsystem, $component, $infotype, $servinfo" :
                         "$system, $subsystem, $component, $infotype, $servinfo, $salescode"
+
                 println(tocPath)
                 tocPaths = "$tocPaths $tocPath\n"
             }

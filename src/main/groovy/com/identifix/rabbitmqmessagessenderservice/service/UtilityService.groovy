@@ -43,7 +43,7 @@ class UtilityService {
         byte[] content = krakenClient.getManualBytes(manual)
         log.info("Manual obtained from Nuxeo")
         JSONArray parsedManual = toJSONArray(content)
-        List<ManualPage> manualPages = getManualPages(parsedManual)
+        List<ManualPage> manualPages = getManualPages(parsedManual, exchangeName, fileName)
 
         ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
         int outdatedPages = 0
@@ -82,7 +82,7 @@ class UtilityService {
                     }
                 }
                 else {
-                    List<ManualPage> manualPages = getManualPages(metaLinks)
+                    List<ManualPage> manualPages = getManualPages(metaLinks, exchangeName, fileName)
                     ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
                     int outdatedPages = 0
                     log.info("OUTDATED pages:")
@@ -122,7 +122,7 @@ class UtilityService {
                     }
                 }
                 else {
-                    List<ManualPage> manualPages = getManualPages(metaLinks)
+                    List<ManualPage> manualPages = getManualPages(metaLinks, exchangeName, fileName)
                     ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
                     int outdatedPages = 0
                     log.info("OUTDATED pages:")
@@ -166,11 +166,12 @@ class UtilityService {
         matcher.find() ? matcher.group() : title
     }
 
-    List<ManualPage> getManualPages(JSONArray parsedManual) {
+    List<ManualPage> getManualPages(JSONArray parsedManual, String exchangeName, String fileName) {
         int missingDocumentsNumber = 0
         List<String> missingDocuments = []
         String publisherDocumentId
         List<ManualPage> pages = []
+        String missingMetaLinks = ""
 
         for (int i = 0; i < parsedManual.length(); i++) {
             try {
@@ -179,29 +180,31 @@ class UtilityService {
 
                 if (!page) {
                     log.error "Error - Found null value for page."
+                    missingDocumentsNumber++
+                    missingDocuments.add(publisherDocumentId)
                     continue
                 }
                 pages.add(page)
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
-                missingDocumentsNumber++
-                missingDocuments.add(publisherDocumentId)
                 log.error("Error when retrieving manual page from Nuxeo: ${publisherDocumentId}: ${e.message}")
             }
         }
         log.info("Number of missing pages: ${missingDocumentsNumber}")
         missingDocuments.each {
-            log.info("MetaLinkId : ${it}")
+            missingMetaLinks += "MetaLinkId: ${it} missed\n"
+            log.info("MetaLinkId : ${it} missed")
         }
-
+        obtainAndSendRabbitMessages(missingMetaLinks, exchangeName, fileName)
         pages
     }
 
-    List<ManualPage> getManualPages(List<String> metaLinks) {
+    List<ManualPage> getManualPages(List<String> metaLinks, String exchangeName, String fileName) {
         int missingDocumentsNumber = 0
         List<String> missingDocuments = []
         String publisherDocumentId
         List<ManualPage> pages = []
+        String missingMetaLinks = ""
 
         for (int i = 0; i < metaLinks.size(); i++) {
             try {
@@ -210,20 +213,22 @@ class UtilityService {
 
                 if (!page) {
                     log.error "Error - Found null value for page."
+                    missingDocumentsNumber++
+                    missingDocuments.add(publisherDocumentId)
                     continue
                 }
                 pages.add(page)
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
-                missingDocumentsNumber++
-                missingDocuments.add(publisherDocumentId)
                 log.error("Error when retrieving manual page from Nuxeo: ${publisherDocumentId}: ${e.message}")
             }
         }
         log.info("Number of missing pages: ${missingDocumentsNumber}")
         missingDocuments.each {
-            log.info("MetaLinkId : ${it}")
+            missingMetaLinks += "MetaLinkId: ${it} missed\n"
+            log.info("MetaLinkId : ${it} missed")
         }
+        obtainAndSendRabbitMessages(missingMetaLinks, exchangeName, fileName)
 
         pages
     }

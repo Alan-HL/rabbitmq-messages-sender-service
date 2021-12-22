@@ -169,9 +169,12 @@ class UtilityService {
     List<ManualPage> getManualPages(JSONArray parsedManual, String exchangeName, String fileName) {
         int missingDocumentsNumber = 0
         List<String> missingDocuments = []
+        int noVehiclesDocumentsNumber = 0
+        List<String> noVehiclesDocuments = []
         String publisherDocumentId
         List<ManualPage> pages = []
         String missingMetaLinks = ""
+        String noVehiclesMetaLinks = ""
 
         for (int i = 0; i < parsedManual.length(); i++) {
             try {
@@ -184,18 +187,30 @@ class UtilityService {
                     missingDocuments.add(publisherDocumentId)
                     continue
                 }
+                if(!page.vehicles){
+                    log.error "Error - Found null vehicles for page."
+                    noVehiclesDocumentsNumber++
+                    noVehiclesDocuments.add(publisherDocumentId)
+                    continue
+                }
                 pages.add(page)
                 log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
             } catch (Exception e) {
                 log.error("Error when retrieving manual page from Nuxeo: ${publisherDocumentId}: ${e.message}")
             }
         }
-        log.info("Number of missing pages: ${missingDocumentsNumber}")
+        log.info("Number of MISSING pages: ${missingDocumentsNumber}")
         missingDocuments.each {
             missingMetaLinks += "MetaLinkId: ${it} missed\n"
             log.info("MetaLinkId : ${it} missed")
         }
         obtainAndSendRabbitMessages(missingMetaLinks, exchangeName, fileName)
+        log.info("Number of NO VEHICLES pages: ${noVehiclesDocumentsNumber}")
+        noVehiclesDocuments.each {
+            noVehiclesMetaLinks += "MetaLinkId: ${it} no vehicles\n"
+            log.info("MetaLinkId : ${it} no vehicles")
+        }
+        obtainAndSendRabbitMessages(noVehiclesMetaLinks, exchangeName, fileName)
         pages
     }
 

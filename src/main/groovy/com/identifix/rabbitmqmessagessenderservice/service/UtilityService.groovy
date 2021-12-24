@@ -75,7 +75,7 @@ class UtilityService {
                     file = new File(fileName)
                     file.eachLine { line ->
                         if (line.contains(pattern)) {
-                            String message = line.split("MetaLinkId: ")[1].split(" with")[0]
+                            String message = line.split("MetaLinkId: ")[1].split(" ")[0]
                             log.info(message)
                             metaLinks.add(message)
                         }
@@ -251,14 +251,19 @@ class UtilityService {
     void obtainAndSendRabbitMessages( String pages, String exchangeName, String fileName) {
         Map<String,String> allMessages = loadAllMessagesToMap(fileName)
         List<String> messagesToBeSent = []
-
+        int totalPagesToSearch = 0
         pages.eachLine {
             if (it.contains('MetaLinkId: ')) {
+                totalPagesToSearch++
                 String metaLinkId = it.split(" ")[1]
-                messagesToBeSent.add(allMessages.get(metaLinkId))
+                String message = allMessages.get(metaLinkId)
+                if(message){
+                    messagesToBeSent.add(message)
+                    log.info(message)
+                }
             }
         }
-        log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
+        log.info("Messages that need republishing: ${messagesToBeSent.size()}/${totalPagesToSearch} ")
 
         messageSender.sendMessages(messagesToBeSent, exchangeName)
     }
@@ -266,12 +271,16 @@ class UtilityService {
     void obtainAndSendRabbitMessages2( String pages, String exchangeName, String fileName) {
         Map<String,String> allMessages = loadAllMessagesToMap(fileName)
         List<String> messagesToBeSent = []
-
+        int totalPagesToSearch = 0
         pages.eachLine {
-            messagesToBeSent.add(allMessages.get(it))
+            totalPagesToSearch++
+            String message = allMessages.get(it)
+            if(message){
+                messagesToBeSent.add(message)
+                log.info(message)
+            }
         }
-        log.info("Messages that need republishing: " + messagesToBeSent.size() as String)
-
+        log.info("Messages that need republishing: ${messagesToBeSent.size()}/${totalPagesToSearch} ")
         messageSender.sendMessages(messagesToBeSent, exchangeName)
     }
 

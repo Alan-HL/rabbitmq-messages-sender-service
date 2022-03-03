@@ -107,6 +107,50 @@ class UtilityService {
 
     }
 
+    String validateManualImagesDate(String limitDate, String exchangeName, String files) {
+        String pattern = "CHRYSLER_EXTRACTED_IMAGE"
+        File file
+        String response = ""
+        List<String> metaLinks = []
+        files.split("\r\n").eachWithIndex { fileName, i ->
+            try {
+                log.info("opening file $i, name: $fileName")
+                if(i == 0){
+                    file = new File(fileName)
+                    file.eachLine { line ->
+                        if (line.contains(pattern) && line.contains("Listener received message")) {
+                            String message = line.split("metaLinkId\":\"")[1].split("\"")[0]
+                            log.info(message)
+                            metaLinks.add(message)
+                        }
+                    }
+                }
+                else {
+                    List<ManualPage> manualPages = getManualPages(metaLinks, exchangeName, fileName)
+                    ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
+                    int outdatedPages = 0
+                    log.info("OUTDATED pages:")
+                    manualPages.each {
+                        if (it.freshness.isBefore(limit)) {
+                            response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
+                            log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
+                            outdatedPages++
+                        }
+                    }
+
+                    response += "${outdatedPages} outdated pages"
+
+                    obtainAndSendRabbitMessages(response, exchangeName, fileName)
+                }
+            }
+            catch (Exception e) {
+                log.error("error: $e")
+            }
+        }
+        response
+
+    }
+
     String revalidateManualPagesDate2(String limitDate, String exchangeName, String files) {
         File file
         String response = ""

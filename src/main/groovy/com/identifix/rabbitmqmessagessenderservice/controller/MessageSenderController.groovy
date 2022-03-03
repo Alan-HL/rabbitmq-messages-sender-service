@@ -39,6 +39,13 @@ class MessageSenderController {
         new ResponseEntity(response, HttpStatus.ACCEPTED)
     }
 
+    @GetMapping("/dateValidation/images")
+    ResponseEntity<String> validateImagesDate(@RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFiles) {
+        log.info("Received request!")
+        String response = utilityService.validateManualImagesDate(limitDate, exchangeName, inputFiles)
+        new ResponseEntity(response, HttpStatus.ACCEPTED)
+    }
+
     @GetMapping("/dateRevalidation/pages")
     ResponseEntity<String> revalidatePagesDate(@RequestParam String limitDate, @RequestParam String exchangeName, @RequestBody String inputFiles) {
         log.info("Received request!")

@@ -4,6 +4,7 @@ import com.identifix.kraken.client.KrakenClient
 import com.identifix.kraken.client.bean.Credential
 import com.identifix.kraken.client.bean.Manual
 import com.identifix.kraken.client.bean.ManualPage
+import com.identifix.kraken.client.bean.ManualPageFile
 import com.identifix.rabbitmqmessagessenderservice.configuration.UtilityServiceConfig
 import com.identifix.rabbitmqmessagessenderservice.proposal.MessageSender
 import com.identifix.rabbitmqmessagessenderservice.utils.CommonConstants
@@ -118,7 +119,7 @@ class UtilityService {
                 if(i == 0){
                     file = new File(fileName)
                     file.eachLine { line ->
-                        if (line.contains(pattern) && line.contains("Listener received message")) {
+                        if (line.contains(pattern) && line.contains("Sending message")) {
                             String message = line.split("metaLinkId\":\"")[1].split("\"")[0]
                             log.info(message)
                             metaLinks.add(message)
@@ -126,21 +127,21 @@ class UtilityService {
                     }
                 }
                 else {
-                    List<ManualPage> manualPages = getManualPages(metaLinks, exchangeName, fileName)
+                    List<ManualPage> manualImages = getManualImages(metaLinks, exchangeName, fileName)
                     ZonedDateTime limit = ZonedDateTime.parse("${limitDate}T00:00:00.000Z[UTC]")
-                    int outdatedPages = 0
-                    log.info("OUTDATED pages:")
-                    manualPages.each {
+                    int outdatedImages = 0
+                    log.info("OUTDATED images:")
+                    manualImages.each {
                         if (it.freshness.isBefore(limit)) {
                             response += "MetaLinkId: ${it.publisherDocumentId} with freshness ${it.freshness}\n"
                             log.info("MetaLinkId :${it.publisherDocumentId} with freshness ${it.freshness}")
-                            outdatedPages++
+                            outdatedImages++
                         }
                     }
 
-                    response += "${outdatedPages} outdated pages"
+                    response += "${outdatedImages} outdated images"
 
-                    obtainAndSendRabbitMessages(response, exchangeName, fileName)
+                    obtainAndSendRabbitMessagesImages(response, exchangeName, fileName)
                 }
             }
             catch (Exception e) {
@@ -258,41 +259,61 @@ class UtilityService {
         pages
     }
 
-    List<ManualPage> getManualPages(List<String> metaLinks, String exchangeName, String fileName) {
+    List<ManualPageFile> getManualImages(List<String> metaLinks, String exchangeName, String fileName) {
         int missingDocumentsNumber = 0
         List<String> missingDocuments = []
         String publisherDocumentId
-        List<ManualPage> pages = []
+        List<ManualPageFile> images = []
         String missingMetaLinks = ""
 
         for (int i = 0; i < metaLinks.size(); i++) {
             try {
                 publisherDocumentId = metaLinks.get(i)
-                ManualPage page = krakenClient.getManualPageByPublisherDocumentId(publisherDocumentId)
+                ManualPageFile image = krakenClient.getManualPageFileByPublisherDocumentId(publisherDocumentId)
 
-                if (!page) {
-                    log.error "Error - Found null value for page."
+                if (!image) {
+                    log.error "Error - Found null value for image."
                     missingDocumentsNumber++
                     missingDocuments.add(publisherDocumentId)
                     continue
                 }
-                pages.add(page)
-                log.info("Success Found Nuxeo page ${publisherDocumentId} Number: ${pages.size()}")
+                images.add(image)
+                log.info("Success Found Nuxeo image ${publisherDocumentId} Number: ${images.size()}")
             } catch (Exception e) {
                 log.error("Error when retrieving manual page from Nuxeo: ${publisherDocumentId}: ${e.message}")
             }
         }
-        log.info("Number of missing pages: ${missingDocumentsNumber}")
+        log.info("Number of missing images: ${missingDocumentsNumber}")
         missingDocuments.each {
             missingMetaLinks += "MetaLinkId: ${it} missed\n"
             log.info("MetaLinkId : ${it} missed")
         }
-        obtainAndSendRabbitMessages(missingMetaLinks, exchangeName, fileName)
+        obtainAndSendRabbitMessagesImages(missingMetaLinks, exchangeName, fileName)
 
-        pages
+        images
     }
 
     void obtainAndSendRabbitMessages( String pages, String exchangeName, String fileName) {
+        Map<String,String> allMessages = loadAllMessagesToMap(fileName)
+        List<String> messagesToBeSent = []
+        int totalPagesToSearch = 0
+        pages.eachLine {
+            if (it.contains('MetaLinkId: ')) {
+                totalPagesToSearch++
+                String metaLinkId = it.split(" ")[1]
+                String message = allMessages.get(metaLinkId)
+                if(message){
+                    messagesToBeSent.add(message)
+                    log.info(message)
+                }
+            }
+        }
+        log.info("Messages that need republishing: ${messagesToBeSent.size()}/${totalPagesToSearch} ")
+
+        messageSender.sendMessages(messagesToBeSent, exchangeName)
+    }
+
+    void obtainAndSendRabbitMessagesImages( String pages, String exchangeName, String fileName) {
         Map<String,String> allMessages = loadAllMessagesToMap(fileName)
         List<String> messagesToBeSent = []
         int totalPagesToSearch = 0
